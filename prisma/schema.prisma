@@ -1,0 +1,225 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// Product catalog
+model Product {
+  id                      Int            @id @default(autoincrement())
+  slug                    String         @unique @db.VarChar(50)
+  name                    String         @db.VarChar(100)
+  description             String?        @db.Text
+  basePrice               Int            // in cents (e.g., 600000 = $6000 ARS)
+  supportsRibbon          Boolean        @default(false)
+  supportsApplique        Boolean        @default(false)
+  textNameMaxChars        Int
+  textDescriptionMaxChars Int
+  isActive                Boolean        @default(true)
+  displayOrder            Int            @default(0)
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+
+  orderItems              OrderItem[]
+  productImages           ProductImage[]
+
+  @@map("products")
+}
+
+// Ribbon colors
+model Ribbon {
+  id           Int            @id @default(autoincrement())
+  slug         String         @unique @db.VarChar(50)
+  name         String         @db.VarChar(100)
+  displayName  String         @db.VarChar(100)
+  hexColor     String?        @db.VarChar(7)
+  isActive     Boolean        @default(true)
+  displayOrder Int            @default(0)
+  createdAt    DateTime       @default(now())
+
+  orderItems   OrderItem[]
+  productImages ProductImage[]
+
+  @@map("ribbons")
+}
+
+// Applique types
+model Applique {
+  id           Int            @id @default(autoincrement())
+  slug         String         @unique @db.VarChar(50)
+  name         String         @db.VarChar(100)
+  displayName  String         @db.VarChar(100)
+  iconPath     String?        @db.VarChar(255)
+  isActive     Boolean        @default(true)
+  displayOrder Int            @default(0)
+  createdAt    DateTime       @default(now())
+
+  orderItems   OrderItem[]
+  productImages ProductImage[]
+
+  @@map("appliques")
+}
+
+// Product images (photo combinations)
+model ProductImage {
+  id         Int       @id @default(autoincrement())
+  productId  Int
+  ribbonId   Int?
+  appliqueId Int?
+  imagePath  String    @db.VarChar(255)
+  isDefault  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  product    Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  ribbon     Ribbon?   @relation(fields: [ribbonId], references: [id], onDelete: SetNull)
+  applique   Applique? @relation(fields: [appliqueId], references: [id], onDelete: SetNull)
+
+  @@unique([productId, ribbonId, appliqueId])
+  @@map("product_images")
+}
+
+// Customer orders
+model Order {
+  id                      Int       @id @default(autoincrement())
+  orderNumber             String    @unique @db.VarChar(20)
+
+  // Customer info
+  customerEmail           String    @db.VarChar(255)
+  customerName            String    @db.VarChar(255)
+  customerPhone           String?   @db.VarChar(50)
+
+  // Shipping info
+  shippingAddress         String    @db.Text
+  shippingCity            String?   @db.VarChar(100)
+  shippingProvince        String?   @db.VarChar(100)
+  shippingPostalCode      String?   @db.VarChar(20)
+  shippingNotes           String?   @db.Text
+
+  // Order details
+  subtotal                Int       // in cents
+  shippingCost            Int       @default(0)
+  total                   Int       // in cents
+
+  // Status tracking
+  status                  String    @default("pending") @db.VarChar(50)
+  paymentStatus           String    @default("pending") @db.VarChar(50)
+
+  // Payment integration
+  mercadoPagoPreferenceId String?   @db.VarChar(255)
+  mercadoPagoPaymentId    String?   @db.VarChar(255)
+  mercadoPagoExternalRef  String?   @db.VarChar(255)
+
+  // Metadata
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+  paidAt                  DateTime?
+  shippedAt               DateTime?
+  deliveredAt             DateTime?
+
+  orderItems              OrderItem[]
+  statusHistory           OrderStatusHistory[]
+
+  @@index([customerEmail])
+  @@index([status])
+  @@index([paymentStatus])
+  @@index([createdAt(sort: Desc)])
+  @@map("orders")
+}
+
+// Order line items
+model OrderItem {
+  id                    Int       @id @default(autoincrement())
+  orderId               Int
+  productId             Int
+
+  // Customization snapshot
+  productName           String    @db.VarChar(255)
+  productSlug           String    @db.VarChar(100)
+
+  ribbonId              Int?
+  ribbonName            String?   @db.VarChar(100)
+
+  appliqueId            Int?
+  appliqueName          String?   @db.VarChar(100)
+
+  // Text customization
+  customTextName        String?   @db.VarChar(100)
+  customTextDescription String?   @db.VarChar(255)
+
+  // Pricing snapshot
+  unitPrice             Int       // in cents
+  quantity              Int       @default(1)
+  subtotal              Int       // unitPrice * quantity
+
+  // Image reference
+  productImagePath      String?   @db.VarChar(255)
+
+  createdAt             DateTime  @default(now())
+
+  order                 Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product               Product   @relation(fields: [productId], references: [id], onDelete: Restrict)
+  ribbon                Ribbon?   @relation(fields: [ribbonId], references: [id], onDelete: SetNull)
+  applique              Applique? @relation(fields: [appliqueId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_items")
+}
+
+// Admin users
+model AdminUser {
+  id          Int       @id @default(autoincrement())
+  email       String    @unique @db.VarChar(255)
+  passwordHash String   @db.VarChar(255)
+  name        String    @db.VarChar(255)
+  role        String    @default("admin") @db.VarChar(50)
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  sessions    AdminSession[]
+  statusChanges OrderStatusHistory[]
+
+  @@index([email])
+  @@map("admin_users")
+}
+
+// Admin sessions
+model AdminSession {
+  id          Int       @id @default(autoincrement())
+  adminUserId Int
+  sessionToken String   @unique @db.VarChar(255)
+  expiresAt   DateTime
+  ipAddress   String?   @db.VarChar(50)
+  userAgent   String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  adminUser   AdminUser @relation(fields: [adminUserId], references: [id], onDelete: Cascade)
+
+  @@index([sessionToken])
+  @@index([adminUserId])
+  @@map("admin_sessions")
+}
+
+// Order status history (audit trail)
+model OrderStatusHistory {
+  id             Int       @id @default(autoincrement())
+  orderId        Int
+  fromStatus     String?   @db.VarChar(50)
+  toStatus       String    @db.VarChar(50)
+  changedByAdminId Int?
+  notes          String?   @db.Text
+  createdAt      DateTime  @default(now())
+
+  order          Order     @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  changedBy      AdminUser? @relation(fields: [changedByAdminId], references: [id], onDelete: SetNull)
+
+  @@index([orderId])
+  @@map("order_status_history")
+}
