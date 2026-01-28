@@ -13,14 +13,14 @@ export function OrderSummary({ item }: OrderSummaryProps) {
     currency: 'ARS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(item.subtotal)
+  }).format(item.subtotal / 100)
 
   const formattedUnitPrice = new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: 'ARS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(item.unitPrice)
+  }).format(item.unitPrice / 100)
 
   return (
     <div className="flex gap-4 border-b border-slate-200 pb-4 last:border-b-0 last:pb-0">

@@ -44,14 +44,15 @@ function CustomizePageContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const productSlug = searchParams.get('p') || 'corona-box'
+  const ribbonFromUrl = searchParams.get('ribbon')
 
   const [product, setProduct] = useState<Product | null>(null)
   const [ribbons, setRibbons] = useState<Ribbon[]>([])
   const [appliques, setAppliques] = useState<Applique[]>([])
   const [loading, setLoading] = useState(true)
 
-  // Customization state
-  const [selectedRibbon, setSelectedRibbon] = useState<string>('azul')
+  // Customization state - use ribbon from URL if provided, otherwise default to 'azul'
+  const [selectedRibbon, setSelectedRibbon] = useState<string>(ribbonFromUrl || 'azul')
   const [selectedApplique, setSelectedApplique] = useState<string>('corona')
   const [textName, setTextName] = useState('')
   const [textDescription, setTextDescription] = useState('')
@@ -83,7 +84,8 @@ function CustomizePageContent() {
           const ribbonsRes = await fetch('/api/ribbons')
           const ribbonsData = await ribbonsRes.json()
           setRibbons(ribbonsData.ribbons || [])
-          if (ribbonsData.ribbons?.[0]) {
+          // Only set default ribbon if no ribbon was provided in URL
+          if (!ribbonFromUrl && ribbonsData.ribbons?.[0]) {
             setSelectedRibbon(ribbonsData.ribbons[0].slug)
           }
         }

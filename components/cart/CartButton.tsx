@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { ShoppingCart } from 'lucide-react'
 import { useCartStore } from '@/lib/store/cart-store'
 import { cn } from '@/lib/utils'
@@ -11,7 +12,13 @@ interface CartButtonProps {
 }
 
 export function CartButton({ onClick, className, showNotificationText = false }: CartButtonProps) {
+  const [mounted, setMounted] = useState(false)
   const totalItems = useCartStore((state) => state.getTotalItems())
+
+  // Only show cart count after mounting to avoid hydration mismatch
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   return (
     <button
@@ -30,7 +37,7 @@ export function CartButton({ onClick, className, showNotificationText = false }:
       ) : (
         <>
           <ShoppingCart className="h-5 w-5 text-slate-700" />
-          {totalItems > 0 && (
+          {mounted && totalItems > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#782048] text-xs font-semibold text-white">
               {totalItems > 99 ? '99+' : totalItems}
             </span>

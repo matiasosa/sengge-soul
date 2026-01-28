@@ -41,9 +41,14 @@ export function ProductCard({ product }: ProductCardProps) {
     }
   }
 
+  // Build the customize URL with the selected color for box products
+  const customizeUrl = isLabelProduct
+    ? `/configure/customize?p=${product.slug}`
+    : `/configure/customize?p=${product.slug}&ribbon=${selectedColor}`
+
   return (
     <Link
-      href={`/configure/customize?p=${product.slug}`}
+      href={customizeUrl}
       className="group relative flex flex-col overflow-hidden rounded-lg border border-slate-200 bg-white transition-all hover:shadow-lg hover:border-[#782048]"
     >
       {/* Product Image */}

@@ -39,7 +39,7 @@ export function CartItem({ item }: CartItemProps) {
       {/* Product Image */}
       <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg bg-slate-50">
         <Image
-          src={item.imagePath}
+          src={item.imagePath || '/images/products/default.png'}
           alt={item.productName}
           fill
           className="object-contain p-2"

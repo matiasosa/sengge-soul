@@ -32,14 +32,14 @@ export default function SummaryPage() {
     currency: 'ARS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(subtotal)
+  }).format(subtotal / 100)
 
   const formattedTotal = new Intl.NumberFormat('es-AR', {
     style: 'currency',
     currency: 'ARS',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
-  }).format(total)
+  }).format(total / 100)
 
   return (
     <div className="min-h-screen bg-slate-50">
